@@ -1,6 +1,6 @@
-# Dick Cert
+# VirilCert
 
-A German-language demo of an anatomy certificate builder, built with React, TypeScript, Vite, and Tailwind CSS. The current source is branded **Eronite Experts**. The [published Arena preview](https://019d5a16-7f9a-7e25-a1cd-aa0fa41881b8.arena.site/) is branded **VirilCert** and is a different revision; this repository is not an export of that deployment.
+A German-language demo of an anatomy certificate builder, built with React, TypeScript, Vite, and Tailwind CSS. This repository contains the source export for the [published Arena preview](https://019d5a16-7f9a-7e25-a1cd-aa0fa41881b8.arena.site/).
 
 ## Run locally
 
@@ -17,7 +17,9 @@ Open the URL printed by Vite. No environment variables, API keys, or backend are
 
 ## What the demo does
 
-The app previews a chosen image in the browser and generates a randomized sample certificate. It does not analyze the image, send it to a server, or call an AI service. The listed prices are illustrative: there is no payment or email integration. Use a non-sensitive sample image to try the flow. Select **PDF / Drucken** in the result to print the certificate or save it as a PDF using your browser's print dialog.
+Select **Analyse starten**, enter a demo name, and choose a non-sensitive sample image. The app previews the image locally and generates randomized sample results; it does not analyze the image, send it to a server, or call an AI service. The email field and prices are for demonstration only. There are no payments or emails.
+
+In the results, select **Offizielles Zertifikat erstellen** and then **Als PDF herunterladen** to save the fictional certificate. The PDF is generated in the browser.
 
 ## Verify and deploy
 

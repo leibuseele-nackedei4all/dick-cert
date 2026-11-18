@@ -14,6 +14,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      // Share the modern-color renderer with jsPDF's optional HTML plugin.
+      html2canvas: "html2canvas-pro",
     },
   },
 });
