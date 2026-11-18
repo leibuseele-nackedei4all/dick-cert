@@ -29,7 +29,13 @@ npm run build      # Generate dist/index.html
 npm run preview    # Serve the production build locally
 ```
 
-The GitHub Actions workflow runs the type check and build on pull requests and pushes to `main`. Deploy the `dist/` directory to a static host; the existing `netlify.toml` configures Netlify to build the app and publish that directory.
+The GitHub Actions workflow runs the type check and build on pull requests and pushes to `main`. The existing `netlify.toml` also supports building and publishing `dist/` on Netlify.
+
+### GitHub Pages
+
+The [GitHub Pages site](https://leibuseele-nackedei4all.github.io/dick-cert/) serves the built `dist/` directory. In **Settings → Pages**, set **Source** to **GitHub Actions**, and make sure the `github-pages` environment allows deployments from `main`.
+
+The **CI** workflow deploys the build after successful checks on `main`. To redeploy manually, open **Actions → CI → Run workflow** and select `main`. Pull requests build the app but do not deploy it. Do not deploy the repository root directly from a branch: its `index.html` loads TypeScript source that must be built first.
 
 ## Project layout
 
@@ -39,5 +45,5 @@ The GitHub Actions workflow runs the type check and build on pull requests and p
 | `src/main.tsx` | React entry point |
 | `src/index.css` | Tailwind CSS entry point |
 | `vite.config.ts` | Vite build and single-file output configuration |
-| `.github/workflows/ci.yml` | Automated type and build checks |
+| `.github/workflows/ci.yml` | Automated checks and GitHub Pages deployment from `main` |
 | `netlify.toml` | Netlify build and publish settings |
