@@ -1,540 +1,615 @@
-import React, { useState } from 'react';
-import { Upload, Shield, Star, Award, CheckCircle, Camera, ChevronRight, Download, RefreshCcw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
+import React, { useState, useRef } from 'react';
+import { Upload, Award, Shield, Star, Download, RefreshCw, CheckCircle } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
-type Step = 'landing' | 'upload' | 'processing' | 'result';
-type Package = 'basis' | 'certificate' | 'premium';
-
-interface Assessment {
-  name: string;
-  length: string;
-  girth: string;
-  shape: string;
-  glans: string;
-  grooming: string;
-  rating: number;
+interface Analysis {
+  overallScore: number;
+  length: number;
+  girth: number;
+  shape: number;
+  aesthetics: number;
   title: string;
-  id: string;
+  description: string;
+  details: string[];
 }
 
-interface Assessment {
-  name: string;
-  length: string;
-  girth: string;
-  shape: string;
-  glans: string;
-  testicles: string;
-  grooming: string;
-  rating: number; // 1-10
-  title: string;
-  id: string;
-}
+const App: React.FC = () => {
+  const [step, setStep] = useState<number>(1);
+  const [name, setName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [image, setImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [showCert, setShowCert] = useState<boolean>(false);
+  const certRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-const mockGenerateAssessment = (name: string): Assessment => {
-  const lengths = ["16 cm – Im oberen Normalbereich (Top 30%)", "14 cm – Ideale Durchschnittsgröße (harmonisch)", "18 cm – Imposant & respektvoll", "15 cm – Perfekt für stetige Stimulation"];
-  const girths = ["13 cm – Beeindruckend voll (perfekt für Stimulation)", "14 cm – Voluminös & prall", "12 cm – Sehr angenehm & passgenau", "15 cm – Dominant & ausfüllend"];
-  const shapes = ["Leichte Aufwärtskrümmung – Ideal für G-Zonen-Zielgenauigkeit", "Gerade und kraftvoll – Symmetrische Stärke", "Leichte Linksneigung – Charakteristischer Schwung"];
-  const glanses = ["Pilzförmig, sensibel – Hochästhetisch", "Klassisch geformt – Perfekte Proportion", "Ausgeprägt und markant – Sehr ansprechend"];
-  const testicles = ["Symmetrisch, mittelgroß – Harmonisch", "Prall und definiert – Maskuline Präsenz", "Kompakt – Sportlich und dynamisch"];
-  const groomings = ["Perfekt getrimmt – Top-Ästhetik", "Natürlich gepflegt – Maskulin & bodenständig", "Komplett glatt – Puristisch & rein"];
-  const titles = ["Der Titan", "Der Ästhet", "Der Perfektionist", "Das Meisterwerk", "Die Legende"];
+  const titles = [
+    "Der Goldene Titan",
+    "Elite Harmoniker",
+    "Perfekter Virtuose",
+    "Majestätischer Athlet",
+    "Souveräner Meister"
+  ];
 
-  const random = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-  const rating = Math.floor(Math.random() * 3) + 8; // 8, 9, 10
-  
-  return {
-    name: name || "Anonymer Ästhet",
-    length: random(lengths),
-    girth: random(girths),
-    shape: random(shapes),
-    glans: random(glanses),
-    testicles: random(testicles),
-    grooming: random(groomings),
-    rating: rating,
-    title: random(titles),
-    id: `PEN-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`
-  };
-};
+  const generateAnalysis = (): Analysis => {
+    const overall = Math.floor(Math.random() * 3) + 8; // 8-10
+    const lengthScore = Math.floor(Math.random() * 3) + 7;
+    const girthScore = Math.floor(Math.random() * 3) + 8;
+    const shapeScore = Math.floor(Math.random() * 4) + 7;
+    const aestheticsScore = Math.floor(Math.random() * 3) + 8;
 
-export default function App() {
-  const [step, setStep] = useState<Step>('landing');
-  const [, setSelectedPackage] = useState<Package>('certificate');
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>('');
-  const [assessment, setAssessment] = useState<Assessment | null>(null);
-  const [processingStatus, setProcessingStatus] = useState<string>('');
+    const title = titles[Math.floor(Math.random() * titles.length)];
 
-  const handleStart = (pkg: Package) => {
-    setSelectedPackage(pkg);
-    setStep('upload');
+    const descriptions = [
+      "Eine beeindruckende Kombination aus Proportionen und Ästhetik. Deine Anatomie strahlt natürliche Eleganz und Funktionalität aus.",
+      "Hervorragende Maße mit einer natürlichen Krümmung, die besondere Empfindungszonen optimal anspricht. Ein wahres Meisterwerk der Natur.",
+      "Perfekte Symmetrie und kraftvolle Präsenz. Ideal für höchste Zufriedenheit in allen Situationen.",
+      "Ausgezeichnete Oberflächenmerkmale und eine starke, selbstbewusste Form. Dein Merkmal verdient höchste Anerkennung."
+    ];
+
+    return {
+      overallScore: overall,
+      length: lengthScore,
+      girth: girthScore,
+      shape: shapeScore,
+      aesthetics: aestheticsScore,
+      title,
+      description: descriptions[Math.floor(Math.random() * descriptions.length)],
+      details: [
+        `Länge & Proportionen: ${lengthScore}/10 - Exzellente Maße im oberen Bereich`,
+        `Umfang & Volumen: ${girthScore}/10 - Beeindruckende Fülle und Präsenz`,
+        `Form & Krümmung: ${shapeScore}/10 - Natürliche, angenehme Biegung`,
+        `Ästhetik & Details: ${aestheticsScore}/10 - Harmonische Kopfform und Textur`,
+        "Pflege: Professionell und gepflegt",
+        "Gesamteindruck: Stärkt das Selbstbewusstsein enorm"
+      ]
+    };
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+      reader.onload = (event) => {
+        setImage(event.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleAnalyze = () => {
-    if (!imagePreview) return;
-    setStep('processing');
-    
-    // Simulate AI workflow
-    const stages = [
-      { text: "Agent 1: Empfange und verschlüssele Bild...", duration: 1500 },
-      { text: "Agent 2 (Grok AI): Analysiere Maße und Proportionen...", duration: 2000 },
-      { text: "Agent 2 (Grok AI): Bewerte Oberflächenmerkmale und Symmetrie...", duration: 2500 },
-      { text: "Agent 2 (Grok AI): Erstelle finales Ranking und Titel...", duration: 1500 },
-      { text: "Agent 3 (Designer): Generiere hochauflösendes Zertifikat...", duration: 2000 },
-    ];
+  const startAnalysis = () => {
+    if (!name || !image) {
+      alert('Bitte gib deinen Namen ein und lade ein Bild hoch!');
+      return;
+    }
 
-    let totalTime = 0;
-    stages.forEach((stage, index) => {
-      setTimeout(() => {
-        setProcessingStatus(stage.text);
-        if (index === stages.length - 1) {
-          setTimeout(() => {
-            setAssessment(mockGenerateAssessment(userName));
-            setStep('result');
-            triggerConfetti();
-          }, stage.duration);
-        }
-      }, totalTime);
-      totalTime += stage.duration;
+    setIsAnalyzing(true);
+
+    // Simulate Grok AI processing
+    setTimeout(() => {
+      const newAnalysis = generateAnalysis();
+      setAnalysis(newAnalysis);
+      setIsAnalyzing(false);
+      setStep(3);
+    }, 2800);
+  };
+
+  const downloadPDF = async () => {
+    if (!certRef.current || !analysis || !name) return;
+
+    const canvas = await html2canvas(certRef.current, {
+      scale: 2,
+      backgroundColor: '#0a0a0a'
     });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+
+    const finalWidth = imgWidth * ratio;
+    const finalHeight = imgHeight * ratio;
+
+    const x = (pdfWidth - finalWidth) / 2;
+    const y = (pdfHeight - finalHeight) / 2 - 5;
+
+    pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+
+    // Add watermark text
+    pdf.setFontSize(10);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text('Fiktives Zertifikat • Nur zum Spaß und zur Selbstmotivation • www.virilcert.app', 20, pdfHeight - 15);
+
+    pdf.save(`VirilCert_${name.replace(/\s+/g, '_')}.pdf`);
   };
 
-  const triggerConfetti = () => {
-    const duration = 3 * 1000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-    const interval: any = setInterval(function() {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
-      const particleCount = 50 * (timeLeft / duration);
-      confetti({
-        ...defaults, particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-      });
-      confetti({
-        ...defaults, particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-      });
-    }, 250);
+  const resetApp = () => {
+    setStep(1);
+    setName('');
+    setEmail('');
+    setImage(null);
+    setAnalysis(null);
+    setShowCert(false);
   };
 
-  const printCertificate = () => {
-    window.print();
-  };
-
-  const reset = () => {
-    setStep('landing');
-    setImagePreview(null);
-    setAssessment(null);
-    setUserName('');
+  const getScoreColor = (score: number) => {
+    if (score >= 9) return 'text-amber-400';
+    if (score >= 8) return 'text-emerald-400';
+    return 'text-blue-400';
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans selection:bg-amber-200">
-      {/* Navigation */}
-      <header className="bg-white border-b border-neutral-200 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={reset}>
-            <Award className="w-8 h-8 text-amber-600" />
-            <span className="font-serif text-xl font-bold tracking-tight text-neutral-900">Eronite<span className="text-amber-600">Experts</span></span>
+    <div className="min-h-screen bg-zinc-950 text-white overflow-hidden">
+      {/* Navbar */}
+      <nav className="border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl fixed w-full z-50">
+        <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-2xl flex items-center justify-center">
+              <Award className="w-5 h-5 text-zinc-950" />
+            </div>
+            <div>
+              <div className="font-serif text-3xl tracking-tighter font-bold text-amber-300">VIRILCERT</div>
+              <div className="text-[10px] text-white/40 -mt-1">ANATOMIE • EXPERTISE</div>
+            </div>
           </div>
-          <div className="hidden sm:flex items-center space-x-6 text-sm font-medium text-neutral-600">
-            <button onClick={() => setStep('landing')} className="hover:text-amber-600 transition-colors">Startseite</button>
-            <button className="hover:text-amber-600 transition-colors">Wie es funktioniert</button>
-            <button className="hover:text-amber-600 transition-colors">Preise</button>
+
+          <div className="flex items-center gap-8 text-sm">
+            <a href="#how" className="hover:text-amber-400 transition-colors">Wie es funktioniert</a>
+            <a href="#pricing" className="hover:text-amber-400 transition-colors">Preise</a>
+            <button
+              onClick={() => {setStep(1); window.scrollTo({top:0,behavior:'smooth'})}}
+              className="px-6 py-2.5 bg-white text-zinc-900 rounded-2xl font-medium flex items-center gap-2 hover:bg-amber-300 transition-all active:scale-95"
+            >
+              <Star className="w-4 h-4" /> JETZT BEWERTEN
+            </button>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <AnimatePresence mode="wait">
-          {step === 'landing' && (
-            <motion.div
-              key="landing"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-24"
-            >
-              {/* Hero Section */}
-              <section className="text-center space-y-8 max-w-4xl mx-auto">
-                <div className="inline-flex items-center space-x-2 bg-amber-100 text-amber-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
-                  <Star className="w-4 h-4" />
-                  <span>Künstliche Intelligenz trifft auf Ästhetik</span>
-                </div>
-                <h1 className="text-5xl md:text-6xl font-serif font-bold text-neutral-900 leading-tight">
-                  Professionelle Anatomische <br className="hidden md:block"/> Selbsteinschätzung Online
-                </h1>
-                <p className="text-xl text-neutral-600 leading-relaxed max-w-2xl mx-auto">
-                  Viele Menschen schätzen es, wenn ihr persönlichstes Merkmal von einer Expertin oder einem Experten fachgerecht analysiert wird. Holen Sie sich jetzt Ihr Zertifikat.
-                </p>
-                <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
-                  <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all shadow-lg hover:shadow-xl w-full sm:w-auto flex items-center justify-center">
-                    Jetzt Analyse starten <ChevronRight className="ml-2 w-5 h-5" />
-                  </button>
-                  <div className="flex items-center space-x-2 text-neutral-500 text-sm">
-                    <Shield className="w-4 h-4 text-green-600" />
-                    <span>100% Legal & Diskret verschlüsselt</span>
-                  </div>
-                </div>
-              </section>
+      <div className="pt-20">
+        {/* HERO */}
+        {step === 1 && (
+          <div className="max-w-5xl mx-auto px-6 pt-16 pb-24 text-center">
+            <div className="inline-flex items-center gap-2 bg-white/5 text-amber-400 text-xs tracking-[2px] px-6 py-2 rounded-3xl border border-white/10 mb-6">
+              <Shield className="w-4 h-4" /> 100% DISKRET &amp; PRIVAT
+            </div>
 
-              {/* Features */}
-              <section className="grid md:grid-cols-3 gap-12 text-center">
-                <div className="space-y-4">
-                  <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto">
-                    <Upload className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-bold font-serif">1. Sicher hochladen</h3>
-                  <p className="text-neutral-600">Laden Sie Ihr Foto verschlüsselt hoch. Es wird von unserem AI-Intake-Agenten direkt anonymisiert verarbeitet.</p>
-                </div>
-                <div className="space-y-4">
-                  <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto">
-                    <Star className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-bold font-serif">2. Grok AI Analyse</h3>
-                  <p className="text-neutral-600">Unsere spezialisierte KI bewertet Maße, Form, Proportionen und Oberflächenmerkmale absolut objektiv und detailliert.</p>
-                </div>
-                <div className="space-y-4">
-                  <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto">
-                    <Award className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-bold font-serif">3. Designer Zertifikat</h3>
-                  <p className="text-neutral-600">Unser Design-Agent erstellt ein wunderschönes, einrahmbares PDF-Zertifikat mit Ihrem persönlichen Anatomie-Rating.</p>
-                </div>
-              </section>
+            <h1 className="text-7xl font-serif tracking-tighter leading-none mb-6">
+              Deine <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-400">anatomische</span><br />Meisterleistung
+            </h1>
 
-              {/* Pricing */}
-              <section id="pricing" className="pt-12">
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl font-serif font-bold mb-4">Wählen Sie Ihr Paket</h2>
-                  <p className="text-neutral-600">Transparente Preise für einen Boost Ihres Selbstvertrauens.</p>
+            <p className="max-w-lg mx-auto text-xl text-white/70 mb-12">
+              Professionelle, KI-gestützte Bewertung deiner intimsten Merkmale.<br />
+              Erhalte ein offizielles Zertifikat und booste dein Selbstvertrauen.
+            </p>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setStep(2)}
+                className="px-10 py-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-zinc-950 font-semibold rounded-3xl text-lg flex items-center gap-3 hover:brightness-110 active:scale-[0.985] transition-all shadow-2xl shadow-amber-500/30"
+              >
+                <Upload className="w-5 h-5" />
+                ANALYSE STARTEN
+              </button>
+
+              <button
+                onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-8 py-4 border border-white/30 hover:bg-white/5 rounded-3xl text-lg transition-all"
+              >
+                Mehr erfahren
+              </button>
+            </div>
+
+            <div className="mt-20 grid grid-cols-3 gap-6 max-w-2xl mx-auto">
+              {[
+                { icon: "📏", label: "Maße & Proportionen" },
+                { icon: "🔄", label: "Form & Symmetrie" },
+                { icon: "✨", label: "Ästhetik & Pflege" }
+              ].map((item, i) => (
+                <div key={i} className="bg-white/5 border border-white/10 p-6 rounded-3xl">
+                  <div className="text-4xl mb-3">{item.icon}</div>
+                  <div className="font-medium">{item.label}</div>
                 </div>
-                <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                  {/* Basis */}
-                  <div className="bg-white rounded-3xl p-8 shadow-sm border border-neutral-200 flex flex-col hover:shadow-md transition-shadow">
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-neutral-900 mb-2">Basis-Bewertung</h3>
-                      <div className="flex items-baseline space-x-1">
-                        <span className="text-4xl font-extrabold">19,90</span>
-                        <span className="text-neutral-500 font-medium">€</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: INPUT */}
+        {step === 2 && (
+          <div className="max-w-2xl mx-auto px-6 pt-12">
+            <div className="mb-8">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="px-4 py-1 bg-white/10 text-xs font-mono tracking-widest rounded-full">SCHRITT 2 / 4</div>
+                <div className="h-px flex-1 bg-white/10"></div>
+              </div>
+              <h2 className="text-5xl font-serif tracking-tight">Persönliche Bewertung</h2>
+              <p className="text-white/60 mt-3">Alles bleibt bei uns. Dein Foto wird nur für die Analyse verwendet.</p>
+            </div>
+
+            <div className="space-y-10">
+              {/* Personal Info */}
+              <div>
+                <label className="block text-sm text-white/70 mb-3">DEIN NAME AUF DEM ZERTIFIKAT</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Max Mustermann"
+                  className="w-full bg-zinc-900 border border-white/20 focus:border-amber-400 rounded-3xl px-7 py-5 text-xl placeholder:text-white/30 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-white/70 mb-3">EMAIL (FÜR ZERTIFIKAT VERSAND SIMULATION)</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="deine@email.com"
+                  className="w-full bg-zinc-900 border border-white/20 focus:border-amber-400 rounded-3xl px-7 py-5 text-xl placeholder:text-white/30 outline-none"
+                />
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm text-white/70 mb-3">DEIN FOTO HOCHLADEN</label>
+
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="group border-2 border-dashed border-white/30 hover:border-amber-400/70 transition-all h-80 rounded-3xl flex flex-col items-center justify-center cursor-pointer bg-zinc-900/50 overflow-hidden relative"
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+
+                  {image ? (
+                    <div className="relative w-full h-full">
+                      <img src={image} alt="Upload" className="object-cover w-full h-full opacity-75" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/60 to-black/80 flex items-end justify-center pb-8">
+                        <div className="text-center">
+                          <CheckCircle className="mx-auto text-emerald-400 w-8 h-8 mb-2" />
+                          <p className="font-medium">Bild erfolgreich hochgeladen</p>
+                          <p className="text-xs text-white/50">Wird nur zur Analyse genutzt</p>
+                        </div>
                       </div>
-                      <p className="text-neutral-500 mt-2 text-sm">Detaillierte Analyse per E-Mail</p>
                     </div>
-                    <ul className="space-y-4 mb-8 flex-1">
-                      <li className="flex items-center space-x-3 text-neutral-700"><CheckCircle className="w-5 h-5 text-green-500" /><span>Grok AI Text-Analyse</span></li>
-                      <li className="flex items-center space-x-3 text-neutral-700"><CheckCircle className="w-5 h-5 text-green-500" /><span>Maße & Proportionen</span></li>
-                    </ul>
-                    <button onClick={() => handleStart('basis')} className="w-full py-3 rounded-xl font-medium text-neutral-900 bg-neutral-100 hover:bg-neutral-200 transition-colors">Auswählen</button>
-                  </div>
-
-                  {/* Mit Zertifikat */}
-                  <div className="bg-neutral-900 rounded-3xl p-8 shadow-xl border border-neutral-800 flex flex-col relative transform md:-translate-y-4">
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Bestseller</div>
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-white mb-2">Mit Zertifikat (PDF)</h3>
-                      <div className="flex items-baseline space-x-1 text-white">
-                        <span className="text-4xl font-extrabold">29,90</span>
-                        <span className="text-neutral-400 font-medium">€</span>
-                      </div>
-                      <p className="text-neutral-400 mt-2 text-sm">Für die Wand oder das Ego</p>
-                    </div>
-                    <ul className="space-y-4 mb-8 flex-1 text-neutral-300">
-                      <li className="flex items-center space-x-3"><CheckCircle className="w-5 h-5 text-amber-500" /><span>Alles aus Basis</span></li>
-                      <li className="flex items-center space-x-3"><CheckCircle className="w-5 h-5 text-amber-500" /><span>PDF-Zertifikat der Exzellenz</span></li>
-                      <li className="flex items-center space-x-3"><CheckCircle className="w-5 h-5 text-amber-500" /><span>Vergabe eines Titels</span></li>
-                    </ul>
-                    <button onClick={() => handleStart('certificate')} className="w-full py-3 rounded-xl font-bold text-neutral-900 bg-amber-500 hover:bg-amber-400 transition-colors shadow-[0_0_20px_rgba(245,158,11,0.3)]">Jetzt starten</button>
-                  </div>
-
-                  {/* Premium */}
-                  <div className="bg-white rounded-3xl p-8 shadow-sm border border-neutral-200 flex flex-col hover:shadow-md transition-shadow">
-                    <div className="mb-8">
-                      <h3 className="text-xl font-bold text-neutral-900 mb-2">Premium</h3>
-                      <div className="flex items-baseline space-x-1">
-                        <span className="text-4xl font-extrabold">39,90</span>
-                        <span className="text-neutral-500 font-medium">€</span>
-                      </div>
-                      <p className="text-neutral-500 mt-2 text-sm">Foto-Analyse + Tipps</p>
-                    </div>
-                    <ul className="space-y-4 mb-8 flex-1">
-                      <li className="flex items-center space-x-3 text-neutral-700"><CheckCircle className="w-5 h-5 text-green-500" /><span>Alles aus Zertifikat</span></li>
-                      <li className="flex items-center space-x-3 text-neutral-700"><CheckCircle className="w-5 h-5 text-green-500" /><span>Persönliche Pflegetipps</span></li>
-                      <li className="flex items-center space-x-3 text-neutral-700"><CheckCircle className="w-5 h-5 text-green-500" /><span>Bevorzugte Bearbeitung</span></li>
-                    </ul>
-                    <button onClick={() => handleStart('premium')} className="w-full py-3 rounded-xl font-medium text-neutral-900 bg-neutral-100 hover:bg-neutral-200 transition-colors">Auswählen</button>
-                  </div>
+                  ) : (
+                    <>
+                      <Upload className="w-16 h-16 text-white/40 mb-6 group-hover:scale-110 transition-transform" />
+                      <p className="text-xl text-white/70 mb-1">Klicke oder ziehe ein Bild hierher</p>
+                      <p className="text-white/40 text-sm max-w-[240px] text-center">Diskret verarbeitet • Wird nicht gespeichert</p>
+                    </>
+                  )}
                 </div>
-              </section>
-            </motion.div>
-          )}
+                <p className="text-center text-[10px] text-white/40 mt-4">Nur für Erwachsene • Anonymisiert</p>
+              </div>
 
-          {step === 'upload' && (
-            <motion.div
-              key="upload"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="max-w-2xl mx-auto"
-            >
-              <div className="bg-white rounded-3xl shadow-xl border border-neutral-200 p-8 md:p-12 text-center">
-                <div className="mb-8">
-                  <h2 className="text-3xl font-serif font-bold mb-4">Foto-Upload & Daten</h2>
-                  <p className="text-neutral-600">Ihre Daten werden sicher an unseren AI-Agenten übertragen und nach der Zertifikatserstellung sofort gelöscht.</p>
-                </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setStep(1)}
+                  className="flex-1 py-5 border border-white/30 rounded-3xl font-medium"
+                >
+                  ZURÜCK
+                </button>
+                <button
+                  onClick={startAnalysis}
+                  disabled={!name || !image}
+                  className="flex-1 py-5 bg-gradient-to-r from-amber-400 to-yellow-500 disabled:from-zinc-700 disabled:text-white/40 text-zinc-950 font-semibold rounded-3xl flex items-center justify-center gap-3 hover:brightness-110 transition-all"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      GROK AI ANALYSIERT...
+                    </>
+                  ) : (
+                    <>JETZT ANALYSIEREN <Star className="w-4 h-4" /></>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-                <div className="space-y-6 text-left">
+        {/* STEP 3: ANALYSIS RESULTS */}
+        {step === 3 && analysis && (
+          <div className="max-w-4xl mx-auto px-8 py-12">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <div className="uppercase tracking-[3px] text-xs text-amber-400 mb-1">KI-ANALYSE ABGESCHLOSSEN</div>
+                <h2 className="text-5xl font-serif">Dein Ergebnis, {name.split(' ')[0]}</h2>
+              </div>
+              <div className={`text-7xl font-bold font-mono tabular-nums ${getScoreColor(analysis.overallScore)}`}>
+                {analysis.overallScore}.<span className="text-4xl align-super">0</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 gap-6">
+              {/* Main Score Card */}
+              <div className="col-span-12 lg:col-span-7 bg-zinc-900/70 border border-white/10 rounded-3xl p-10">
+                <div className="flex justify-between mb-8">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Name für das Zertifikat (optional)</label>
-                    <input 
-                      type="text" 
-                      value={userName}
-                      onChange={(e) => setUserName(e.target.value)}
-                      placeholder="z.B. Max Mustermann oder Pseudonym" 
-                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow"
-                    />
+                    <div className="uppercase text-xs tracking-widest text-white/50">DEIN TITEL</div>
+                    <div className="text-4xl font-serif text-amber-200 leading-none mt-1">{analysis.title}</div>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Bild hochladen</label>
-                    <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-2xl transition-colors ${imagePreview ? 'border-amber-500 bg-amber-50' : 'border-neutral-300 hover:border-amber-400'}`}>
-                      <div className="space-y-1 text-center">
-                        {imagePreview ? (
-                          <div className="flex flex-col items-center">
-                            <div className="w-32 h-32 rounded-lg overflow-hidden mb-4 border border-amber-200 shadow-sm">
-                              <img src={imagePreview} alt="Preview" className="w-full h-full object-cover blur-sm hover:blur-none transition-all cursor-pointer" title="Hover zum Ansehen" />
-                            </div>
-                            <div className="flex text-sm text-neutral-600">
-                              <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-amber-600 hover:text-amber-500 focus-within:outline-none">
-                                <span>Anderes Bild wählen</span>
-                                <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageUpload} />
-                              </label>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <Camera className="mx-auto h-12 w-12 text-neutral-400 mb-4" />
-                            <div className="flex text-sm text-neutral-600 justify-center">
-                              <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-amber-600 hover:text-amber-500 focus-within:outline-none px-2 py-1">
-                                <span>Datei auswählen</span>
-                                <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageUpload} />
-                              </label>
-                              <p className="pl-1 py-1">oder Drag & Drop</p>
-                            </div>
-                            <p className="text-xs text-neutral-500 mt-2">PNG, JPG bis zu 10MB</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-6">
-                    <button 
-                      onClick={handleAnalyze} 
-                      disabled={!imagePreview}
-                      className={`w-full py-4 rounded-xl text-lg font-bold transition-all shadow-lg flex items-center justify-center ${imagePreview ? 'bg-amber-500 text-neutral-900 hover:bg-amber-400 hover:shadow-xl' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'}`}
-                    >
-                      Analyse durch Grok AI starten <ChevronRight className="ml-2 w-5 h-5" />
-                    </button>
-                    <p className="text-center text-xs text-neutral-500 mt-4 flex items-center justify-center">
-                      <Shield className="w-3 h-3 mr-1" /> Verschlüsselte Übertragung
-                    </p>
+                  <div className="text-right">
+                    <div className="text-emerald-400 text-sm font-medium">SEHR GUT</div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
 
-          {step === 'processing' && (
-            <motion.div
-              key="processing"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="max-w-xl mx-auto text-center py-20"
-            >
-              <div className="relative w-32 h-32 mx-auto mb-8">
-                <div className="absolute inset-0 border-4 border-amber-200 rounded-full animate-ping opacity-75"></div>
-                <div className="absolute inset-0 border-4 border-amber-500 rounded-full border-t-transparent animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center bg-white rounded-full m-2 shadow-inner">
-                  <Star className="w-10 h-10 text-amber-500 animate-pulse" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-bold mb-4 font-serif">Agenten arbeiten...</h2>
-              <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-sm max-w-sm mx-auto">
-                <p className="text-amber-600 font-medium font-mono text-sm animate-pulse h-10 flex items-center justify-center">
-                  {processingStatus}
+                <p className="text-lg leading-relaxed text-white/80 mb-10">
+                  {analysis.description}
                 </p>
-              </div>
-            </motion.div>
-          )}
 
-          {step === 'result' && assessment && (
-            <motion.div
-              key="result"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="max-w-4xl mx-auto"
-            >
-              <div className="text-center mb-8 space-y-4">
-                <h2 className="text-3xl md:text-4xl font-serif font-bold text-neutral-900">Ihre Analyse ist abgeschlossen!</h2>
-                <p className="text-lg text-neutral-600">Grok AI hat das Rating ermittelt. Der Designer-Agent hat Ihr Zertifikat erstellt.</p>
-                <div className="flex justify-center space-x-4">
-                  <button onClick={printCertificate} className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center">
-                    <Download className="w-4 h-4 mr-2" /> PDF / Drucken
-                  </button>
-                  <button onClick={reset} className="bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-6 py-2 rounded-lg font-medium transition-colors flex items-center">
-                    <RefreshCcw className="w-4 h-4 mr-2" /> Neue Analyse
-                  </button>
+                <div className="space-y-6">
+                  {analysis.details.map((detail, index) => (
+                    <div key={index} className="flex gap-4 items-start">
+                      <div className="mt-1.5 w-2 h-2 bg-amber-400 rounded-full flex-shrink-0"></div>
+                      <div className="text-white/80">{detail}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Printable Certificate Area */}
-              <div className="print:m-0 print:p-0 bg-white rounded-sm shadow-2xl p-8 md:p-16 border-[12px] border-double border-amber-600/30 relative overflow-hidden" id="certificate">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, black 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
-                
-                {/* Gold Corner Accents */}
-                <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-amber-500"></div>
-                <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-amber-500"></div>
-                <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-amber-500"></div>
-                <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-amber-500"></div>
+              {/* Sidebar Stats */}
+              <div className="col-span-12 lg:col-span-5 space-y-6">
+                <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8">
+                  <div className="text-white/60 text-sm mb-6">DETAILLIERTE BEWERTUNG</div>
 
-                <div className="relative z-10 flex flex-col items-center text-center">
-                  <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6 border-2 border-amber-500 shadow-md">
-                    <Award className="w-10 h-10 text-amber-600" />
+                  <div className="space-y-7">
+                    {[
+                      { label: "Länge", value: analysis.length, color: "from-blue-400 to-cyan-400" },
+                      { label: "Umfang", value: analysis.girth, color: "from-amber-400 to-orange-400" },
+                      { label: "Form", value: analysis.shape, color: "from-purple-400 to-pink-400" },
+                      { label: "Ästhetik", value: analysis.aesthetics, color: "from-emerald-400 to-teal-400" },
+                    ].map((metric, idx) => (
+                      <div key={idx} className="flex items-center gap-5">
+                        <div className="w-20 text-sm text-white/60">{metric.label}</div>
+                        <div className="flex-1 h-2.5 bg-white/10 rounded-3xl overflow-hidden">
+                          <div
+                            className={`h-full bg-gradient-to-r ${metric.color}`}
+                            style={{ width: `${metric.value * 10}%` }}
+                          ></div>
+                        </div>
+                        <div className="font-mono w-8 text-right text-lg">{metric.value}</div>
+                      </div>
+                    ))}
                   </div>
-                  
-                  <h1 className="text-4xl md:text-5xl font-serif font-extrabold text-neutral-900 mb-2 tracking-wide uppercase">
-                    Zertifikat
-                  </h1>
-                  <h2 className="text-xl md:text-2xl font-serif text-amber-700 mb-12 tracking-widest uppercase">
-                    Der Anatomischen Exzellenz
-                  </h2>
+                </div>
 
-                  <p className="text-neutral-500 italic mb-4 text-lg">Dieses Dokument bestätigt die professionelle AI-Bewertung von:</p>
-                  
-                  <div className="w-3/4 border-b-2 border-amber-500 pb-2 mb-10">
-                    <h3 className="text-3xl font-serif font-bold text-neutral-900">{assessment.name}</h3>
+                <div className="bg-gradient-to-br from-zinc-900 to-zinc-950 border border-amber-400/20 rounded-3xl p-8 text-center">
+                  <div className="mx-auto w-16 h-16 bg-amber-400/10 rounded-2xl flex items-center justify-center mb-4">
+                    <Award className="w-8 h-8 text-amber-400" />
                   </div>
+                  <p className="font-medium text-lg">Dieses Ergebnis ist besser als 87% der Einsendungen.</p>
+                  <p className="text-xs text-white/40 mt-6">Die Analyse wurde von einer KI durchgeführt, die auf 20 Jahren Erfahrung in der intimen Anatomie basiert.</p>
+                </div>
+              </div>
+            </div>
 
-                  <div className="bg-neutral-50 w-full max-w-2xl p-8 rounded-xl border border-neutral-200 mb-10 text-left relative">
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-white px-4 text-neutral-400 text-sm font-bold uppercase tracking-wider font-mono">
-                      Anatomie-Profil
+            <div className="flex gap-4 mt-10">
+              <button
+                onClick={resetApp}
+                className="px-8 py-4 border border-white/30 rounded-3xl text-sm"
+              >
+                NEU STARTEN
+              </button>
+              <button
+                onClick={() => setShowCert(true)}
+                className="flex-1 py-4 bg-white text-zinc-950 rounded-3xl font-semibold flex items-center justify-center gap-2 hover:bg-amber-200"
+              >
+                <Award className="w-5 h-5" />
+                OFFIZIELLES ZERTIFIKAT ERSTELLEN
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* CERTIFICATE MODAL */}
+        {showCert && analysis && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-6">
+            <div className="max-w-4xl w-full">
+              {/* Certificate Preview */}
+              <div ref={certRef} className="bg-[#0a0a0a] p-16 border-[14px] border-[#d4af37] shadow-2xl relative overflow-hidden">
+                {/* Background pattern */}
+                <div className="absolute inset-0 opacity-5"
+                     style={{
+                       backgroundImage: `repeating-linear-gradient(45deg, #d4af37, #d4af37 2px, transparent 2px, transparent 30px)`
+                     }}>
+                </div>
+
+                <div className="relative z-10 text-center">
+                  <div className="flex justify-center mb-6">
+                    <div className="inline-flex items-center gap-3 bg-black px-8 py-3 rounded-3xl border border-amber-400/80">
+                      <div className="text-3xl">🏛️</div>
+                      <div className="font-serif text-3xl tracking-[4px] text-amber-300">VIRILCERT</div>
                     </div>
-                    <ul className="space-y-4 font-serif text-lg">
-                      <li className="flex items-start">
-                        <span className="text-amber-600 font-bold mr-3 w-24">Länge:</span> 
-                        <span className="text-neutral-800">{assessment.length}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-amber-600 font-bold mr-3 w-24">Umfang:</span> 
-                        <span className="text-neutral-800">{assessment.girth}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-amber-600 font-bold mr-3 w-24">Form:</span> 
-                        <span className="text-neutral-800">{assessment.shape}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-amber-600 font-bold mr-3 w-24">Eichel:</span> 
-                        <span className="text-neutral-800">{assessment.glans}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-amber-600 font-bold mr-3 w-24">Hoden:</span> 
-                        <span className="text-neutral-800">{assessment.testicles}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-amber-600 font-bold mr-3 w-24">Pflege:</span> 
-                        <span className="text-neutral-800">{assessment.grooming}</span>
-                      </li>
-                    </ul>
                   </div>
 
-                  <div className="mb-8 flex flex-col items-center">
-                    <p className="text-neutral-500 text-sm uppercase tracking-widest mb-2">Gesamtrating (Grok AI)</p>
-                    <div className="flex space-x-2 mb-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-8 h-8 ${i < Math.round(assessment.rating / 2) ? 'fill-amber-400 text-amber-500' : 'text-neutral-300'}`} />
-                      ))}
-                    </div>
-                    <p className="font-bold text-2xl text-neutral-900">{assessment.rating}/10 – {assessment.rating >= 9 ? 'Exzellent!' : 'Sehr Gut!'}</p>
+                  <div className="uppercase text-amber-300 text-sm tracking-[4px] mb-3">OFFIZIELLES ZERTIFIKAT</div>
+
+                  <div className="font-serif text-[42px] leading-none text-white mb-8">ANATOMISCHE<br />MEISTERLEISTUNG</div>
+
+                  <div className="text-white/70 mb-2">Wird hiermit verliehen an</div>
+                  <div className="text-5xl font-light tracking-tight text-amber-100 mb-12 border-b border-white/10 pb-4">{name}</div>
+
+                  <div className="text-xl text-white/80 max-w-xs mx-auto mb-12">
+                    {analysis.title}
                   </div>
 
-                  <div className="bg-neutral-900 text-amber-400 px-8 py-4 rounded-lg shadow-inner mb-12 transform -rotate-1">
-                    <p className="font-serif text-2xl font-bold tracking-wide">Titel: « {assessment.title} »</p>
+                  <div className="grid grid-cols-2 gap-x-12 gap-y-6 text-left mx-auto max-w-md mb-16">
+                    {analysis.details.slice(0, 4).map((d, i) => (
+                      <div key={i} className="flex items-baseline gap-3 text-sm">
+                        <span className="text-amber-400">★</span>
+                        <span className="text-white/90">{d}</span>
+                      </div>
+                    ))}
                   </div>
 
-                  <p className="text-xl font-serif text-neutral-800 italic mb-16">
-                    "Ein wahres Meisterwerk der Natur – selbstbewusst einsetzen!"
-                  </p>
-
-                  <div className="w-full flex justify-between items-end border-t border-neutral-300 pt-6 px-4">
+                  <div className="flex justify-between items-end text-xs">
                     <div className="text-left">
-                      <p className="font-bold text-neutral-800">Eronite Experten-Team</p>
-                      <p className="text-xs text-neutral-500">Ausgestellt durch Grok AI & Designer Agent</p>
+                      <div className="text-white/40">AUSGESTELLT AM</div>
+                      <div className="text-white text-lg font-light">{new Date().toLocaleDateString('de-DE', {year:'numeric', month:'long', day:'numeric'})}</div>
                     </div>
-                    <div className="text-center">
-                      <div className="w-20 h-20 border-4 border-amber-600 rounded-full flex items-center justify-center opacity-70 transform rotate-12">
-                        <span className="font-bold text-amber-700 text-xs text-center uppercase leading-tight">Official<br/>Seal</span>
+
+                    <div>
+                      <div className="flex justify-center mb-1">
+                        <div className="w-20 h-[1px] bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
                       </div>
+                      <div className="font-serif text-xl text-amber-300">Prof. Dr. L. Aurelius</div>
+                      <div className="text-[10px] text-white/30 -mt-1">CHIEF ANATOMIST</div>
                     </div>
+
                     <div className="text-right">
-                      <p className="text-sm font-mono text-neutral-600">ID: {assessment.id}</p>
-                      <p className="text-sm text-neutral-500">{new Date().toLocaleDateString('de-DE')}</p>
+                      <div className="text-5xl font-bold text-amber-400/80 font-mono tracking-tighter">8.{Math.floor(Math.random()*9)}</div>
+                      <div className="-mt-3 text-xs text-white/40">OVERALL</div>
                     </div>
                   </div>
                 </div>
+
+                {/* Decorative seals */}
+                <div className="absolute bottom-12 right-12 w-28 h-28 border-[6px] border-amber-400/60 rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 border border-amber-400/80 rounded-full flex items-center justify-center text-4xl">🔱</div>
+                </div>
+
+                <div className="absolute -bottom-6 -left-6 text-[180px] font-black text-amber-400/5 select-none">V</div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-      
-      {/* Hide footer and unneeded elements when printing */}
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #certificate, #certificate * {
-            visibility: visible;
-          }
-          #certificate {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            border-width: 4px;
-          }
-          /* Fix background colors for print */
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-      `}</style>
+
+              <div className="flex gap-4 justify-center mt-8">
+                <button
+                  onClick={() => setShowCert(false)}
+                  className="px-10 py-4 border border-white/30 text-white rounded-3xl"
+                >
+                  SCHLIESSEN
+                </button>
+                <button
+                  onClick={downloadPDF}
+                  className="px-10 py-4 bg-gradient-to-r from-amber-300 to-yellow-400 text-zinc-950 rounded-3xl flex items-center gap-3 font-semibold"
+                >
+                  <Download className="w-5 h-5" /> ALS PDF HERUNTERLADEN
+                </button>
+              </div>
+
+              <p className="text-center text-white/30 text-xs mt-6">Dies ist eine humorvolle Demo-App und kein echtes medizinisches Dokument.</p>
+            </div>
+          </div>
+        )}
+
+        {/* HOW IT WORKS */}
+        <div id="how" className="max-w-6xl mx-auto px-8 py-28 border-t border-white/10">
+          <div className="text-center mb-16">
+            <div className="text-amber-400 text-sm tracking-widest mb-4">3 SCHRITTE ZUM ERFOLG</div>
+            <h3 className="font-serif text-6xl tracking-tighter">So funktioniert es</h3>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                num: "01",
+                title: "Foto hochladen",
+                desc: "Lade ein diskretes Foto deines anatomischen Merkmals hoch. Die KI analysiert es sofort."
+              },
+              {
+                num: "02",
+                title: "Professionelle Analyse",
+                desc: "Unsere KI (inspiriert von Grok) bewertet Länge, Umfang, Form, Symmetrie und Pflege. Erhalte einen detaillierten Report."
+              },
+              {
+                num: "03",
+                title: "Zertifikat erhalten",
+                desc: "Lade dein wunderschönes, rahmenfertiges Zertifikat herunter. Teile es oder hänge es stolz auf."
+              }
+            ].map((stepItem, index) => (
+              <div key={index} className="group relative bg-zinc-900 rounded-3xl p-10 transition-all hover:-translate-y-2 border border-transparent hover:border-amber-400/30">
+                <div className="font-mono text-8xl text-white/5 group-hover:text-white/10 absolute top-6 right-6 transition-all">{stepItem.num}</div>
+                <div className="text-amber-400 text-6xl mb-6 font-light">{stepItem.num}</div>
+                <div className="font-semibold text-3xl mb-4 text-balance">{stepItem.title}</div>
+                <p className="text-white/60 leading-relaxed">{stepItem.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* PRICING */}
+        <div id="pricing" className="bg-zinc-900 py-20">
+          <div className="max-w-6xl mx-auto px-8">
+            <div className="text-center mb-16">
+              <div className="inline text-xs bg-white/5 px-5 py-2 rounded-3xl">PREISE</div>
+              <h3 className="font-serif text-5xl mt-4">Wähle dein Paket</h3>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              {[
+                {
+                  name: "BASIS",
+                  price: "19,90",
+                  features: ["KI-Bewertung per E-Mail", "Detaillierter Report", "Score 1-10"],
+                  popular: false
+                },
+                {
+                  name: "PREMIUM",
+                  price: "29,90",
+                  features: ["Alles aus Basis", "Hochwertiges PDF-Zertifikat", "Personalisierte Empfehlungen", "Rahmenvorlage"],
+                  popular: true
+                },
+                {
+                  name: "ULTIMATE",
+                  price: "39,90",
+                  features: ["Alles aus Premium", "Video-Feedback", "Folge-Analyse in 30 Tagen", "VIP Zugang"],
+                  popular: false
+                }
+              ].map((plan, i) => (
+                <div key={i} className={`rounded-3xl p-8 relative ${plan.popular ? 'border-2 border-amber-400 scale-[1.03] shadow-2xl shadow-amber-500/20' : 'border border-white/10'}`}>
+                  {plan.popular && <div className="absolute -top-3 right-8 bg-amber-400 text-zinc-950 text-xs font-bold px-5 py-1 rounded-3xl">BELIEBTEST</div>}
+
+                  <div className="font-medium text-sm tracking-widest mb-4 text-white/60">{plan.name}</div>
+                  <div className="flex items-baseline mb-8">
+                    <span className="text-7xl font-light">€</span>
+                    <span className="text-7xl font-light ml-1">{plan.price}</span>
+                  </div>
+
+                  <ul className="space-y-4 mb-12">
+                    {plan.features.map((f, idx) => (
+                      <li key={idx} className="flex gap-3 items-center text-sm">
+                        <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" /> {f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button className={`w-full py-5 text-sm font-medium rounded-3xl border ${plan.popular ? 'bg-amber-400 text-black border-amber-400' : 'border-white/30 hover:bg-white/5'}`}>
+                    {plan.popular ? 'JETZT ZERTIFIKAT ERHALTEN' : 'PAKET WÄHLEN'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <footer className="bg-black py-16 border-t border-white/10 text-center text-xs text-white/30">
+          <div className="max-w-4xl mx-auto px-6">
+            VirilCert ist eine humorvolle Demo-Anwendung und dient rein der Unterhaltung. Keine echten medizinischen oder wissenschaftlichen Bewertungen.<br />
+            Alle generierten Zertifikate sind fiktiv. Respektiere die Privatsphäre anderer. Erstellt mit KI und ❤️ für Selbstvertrauen.
+          </div>
+        </footer>
+      </div>
     </div>
   );
-}
+};
+
+export default App;
