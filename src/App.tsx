@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Award, Shield, Star, Download, RefreshCw, CheckCircle } from 'lucide-react';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 
 interface Analysis {
   overallScore: number;
@@ -422,8 +422,8 @@ const App: React.FC = () => {
 
         {/* CERTIFICATE MODAL */}
         {showCert && analysis && (
-          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-6">
-            <div className="max-w-4xl w-full">
+          <div className="fixed inset-0 bg-black/90 flex justify-center z-[100] overflow-y-auto p-6">
+            <div className="my-auto max-w-4xl w-full">
               {/* Certificate Preview */}
               <div ref={certRef} className="bg-[#0a0a0a] p-16 border-[14px] border-[#d4af37] shadow-2xl relative overflow-hidden">
                 {/* Background pattern */}
