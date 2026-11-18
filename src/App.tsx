@@ -3,6 +3,9 @@ import { Upload, Award, Shield, Star, Download, RefreshCw, CheckCircle } from 'l
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas-pro';
 
+const BRAND_NAME = '*Nacke*Dei*-Proffessionell-Certification';
+const PDF_FILENAME_PREFIX = BRAND_NAME.replace(/\*/g, '');
+
 interface Analysis {
   overallScore: number;
   length: number;
@@ -126,12 +129,17 @@ const App: React.FC = () => {
 
     pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
 
-    // Add watermark text
+    pdf.setProperties({ title: BRAND_NAME });
     pdf.setFontSize(10);
     pdf.setTextColor(150, 150, 150);
-    pdf.text('Fiktives Zertifikat • Nur zum Spaß und zur Selbstmotivation • www.virilcert.app', 20, pdfHeight - 15);
+    pdf.text(
+      `Fiktives Zertifikat • Nur zum Spaß und zur Selbstmotivation • ${BRAND_NAME}`,
+      pdfWidth / 2,
+      pdfHeight - 15,
+      { align: 'center', maxWidth: pdfWidth - 40 }
+    );
 
-    pdf.save(`VirilCert_${name.replace(/\s+/g, '_')}.pdf`);
+    pdf.save(`${PDF_FILENAME_PREFIX}_${name.replace(/\s+/g, '_')}.pdf`);
   };
 
   const resetApp = () => {
@@ -150,26 +158,26 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white overflow-hidden">
+    <div className="min-h-screen bg-zinc-950 text-white overflow-x-clip">
       {/* Navbar */}
-      <nav className="border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl fixed w-full z-50">
-        <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-2xl flex items-center justify-center">
+      <nav className="border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl sticky top-0 w-full z-50">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:px-8 sm:py-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="w-9 h-9 shrink-0 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-2xl flex items-center justify-center">
               <Award className="w-5 h-5 text-zinc-950" />
             </div>
-            <div>
-              <div className="font-serif text-3xl tracking-tighter font-bold text-amber-300">VIRILCERT</div>
+            <div className="min-w-0">
+              <div className="wrap-anywhere font-serif text-lg leading-tight tracking-tighter font-bold text-amber-300 sm:text-2xl lg:text-3xl">{BRAND_NAME}</div>
               <div className="text-[10px] text-white/40 -mt-1">ANATOMIE • EXPERTISE</div>
             </div>
           </div>
 
-          <div className="flex items-center gap-8 text-sm">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:gap-x-8 sm:text-sm">
             <a href="#how" className="hover:text-amber-400 transition-colors">Wie es funktioniert</a>
             <a href="#pricing" className="hover:text-amber-400 transition-colors">Preise</a>
             <button
               onClick={() => {setStep(1); window.scrollTo({top:0,behavior:'smooth'})}}
-              className="px-6 py-2.5 bg-white text-zinc-900 rounded-2xl font-medium flex items-center gap-2 hover:bg-amber-300 transition-all active:scale-95"
+              className="px-3 py-1.5 sm:px-6 sm:py-2.5 bg-white text-zinc-900 rounded-2xl font-medium flex items-center gap-2 hover:bg-amber-300 transition-all active:scale-95"
             >
               <Star className="w-4 h-4" /> JETZT BEWERTEN
             </button>
@@ -177,7 +185,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <div className="pt-20">
+      <div>
         {/* HERO */}
         {step === 1 && (
           <div className="max-w-5xl mx-auto px-6 pt-16 pb-24 text-center">
@@ -425,7 +433,7 @@ const App: React.FC = () => {
           <div className="fixed inset-0 bg-black/90 flex justify-center z-[100] overflow-y-auto p-6">
             <div className="my-auto max-w-4xl w-full">
               {/* Certificate Preview */}
-              <div ref={certRef} className="bg-[#0a0a0a] p-16 border-[14px] border-[#d4af37] shadow-2xl relative overflow-hidden">
+              <div ref={certRef} className="bg-[#0a0a0a] p-6 sm:p-16 border-[14px] border-[#d4af37] shadow-2xl relative overflow-hidden">
                 {/* Background pattern */}
                 <div className="absolute inset-0 opacity-5"
                      style={{
@@ -435,9 +443,9 @@ const App: React.FC = () => {
 
                 <div className="relative z-10 text-center">
                   <div className="flex justify-center mb-6">
-                    <div className="inline-flex items-center gap-3 bg-black px-8 py-3 rounded-3xl border border-amber-400/80">
-                      <div className="text-3xl">🏛️</div>
-                      <div className="font-serif text-3xl tracking-[4px] text-amber-300">VIRILCERT</div>
+                    <div className="inline-flex max-w-full items-center gap-3 bg-black px-3 py-3 sm:px-8 rounded-3xl border border-amber-400/80">
+                      <div className="shrink-0 text-xl sm:text-3xl">🏛️</div>
+                      <div className="min-w-0 wrap-anywhere font-serif text-sm tracking-wide text-amber-300 sm:text-xl lg:text-2xl">{BRAND_NAME}</div>
                     </div>
                   </div>
 
@@ -487,7 +495,7 @@ const App: React.FC = () => {
                   <div className="w-16 h-16 border border-amber-400/80 rounded-full flex items-center justify-center text-4xl">🔱</div>
                 </div>
 
-                <div className="absolute -bottom-6 -left-6 text-[180px] font-black text-amber-400/5 select-none">V</div>
+                <div className="absolute -bottom-6 -left-6 text-[180px] font-black text-amber-400/5 select-none">{PDF_FILENAME_PREFIX[0]}</div>
               </div>
 
               <div className="flex gap-4 justify-center mt-8">
@@ -603,7 +611,7 @@ const App: React.FC = () => {
         {/* FOOTER */}
         <footer className="bg-black py-16 border-t border-white/10 text-center text-xs text-white/30">
           <div className="max-w-4xl mx-auto px-6">
-            VirilCert ist eine humorvolle Demo-Anwendung und dient rein der Unterhaltung. Keine echten medizinischen oder wissenschaftlichen Bewertungen.<br />
+            {BRAND_NAME} ist eine humorvolle Demo-Anwendung und dient rein der Unterhaltung. Keine echten medizinischen oder wissenschaftlichen Bewertungen.<br />
             Alle generierten Zertifikate sind fiktiv. Respektiere die Privatsphäre anderer. Erstellt mit KI und ❤️ für Selbstvertrauen.
           </div>
         </footer>

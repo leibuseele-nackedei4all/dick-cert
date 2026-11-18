@@ -1,6 +1,6 @@
-# VirilCert
+# \*Nacke\*Dei\*-Proffessionell-Certification
 
-A German-language demo of an anatomy certificate builder, built with React, TypeScript, Vite, and Tailwind CSS. This repository contains the source export for the [published Arena preview](https://019d5a16-7f9a-7e25-a1cd-aa0fa41881b8.arena.site/).
+A German-language demo of an anatomy certificate builder, built with React, TypeScript, Vite, and Tailwind CSS. This project is based on the source export for the [original Arena preview](https://019d5a16-7f9a-7e25-a1cd-aa0fa41881b8.arena.site/).
 
 ## Run locally
 
