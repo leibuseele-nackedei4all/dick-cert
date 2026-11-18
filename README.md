@@ -19,17 +19,18 @@ Open the URL printed by Vite. No environment variables, API keys, or backend are
 
 Select **Analyse starten**, enter a demo name, and choose a non-sensitive sample image. The app previews the image locally and generates randomized sample results; it does not analyze the image, send it to a server, or call an AI service. The email field and prices are for demonstration only. There are no payments or emails.
 
-In the results, select **Offizielles Zertifikat erstellen** and then **Als PDF herunterladen** to save the fictional certificate. The PDF is generated in the browser.
+The results show the detailed report and the fictional certificate together. The overall score is the equally weighted average of the four category scores, rounded to one decimal; the report and certificate use the same score, name, and date. Select **Bewertung & Urkunde als PDF herunterladen** to save one two-page A4 PDF: the detailed report first and the certificate second. The PDF is generated in the browser.
 
 ## Verify and deploy
 
 ```sh
+npm test           # Verify scoring and result consistency
 npm run typecheck  # Check TypeScript
 npm run build      # Generate dist/index.html
 npm run preview    # Serve the production build locally
 ```
 
-The GitHub Actions workflow runs the type check and build on pull requests and pushes to `main`. The existing `netlify.toml` also supports building and publishing `dist/` on Netlify.
+The GitHub Actions workflow runs the tests, type check, and build on pull requests and pushes to `main`. The existing `netlify.toml` also supports building and publishing `dist/` on Netlify.
 
 ### GitHub Pages
 
@@ -41,7 +42,10 @@ The **CI** workflow deploys the build after successful checks on `main`. To rede
 
 | Path | Purpose |
 | --- | --- |
-| `src/App.tsx` | Landing page, local image selection, mock assessment, and printable certificate |
+| `src/App.tsx` | Landing page, local image selection, and result flow |
+| `src/analysis.ts` | Demo result data and shared scoring |
+| `src/components/` | Report, certificate, and result view |
+| `src/utils/assessmentPdf.ts` | Two-page PDF export |
 | `src/main.tsx` | React entry point |
 | `src/index.css` | Tailwind CSS entry point |
 | `vite.config.ts` | Vite build and single-file output configuration |

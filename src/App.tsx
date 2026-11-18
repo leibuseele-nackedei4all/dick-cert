@@ -1,160 +1,63 @@
-import React, { useState, useRef } from 'react';
-import { Upload, Award, Shield, Star, Download, RefreshCw, CheckCircle } from 'lucide-react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas-pro';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Upload, Award, Shield, Star, RefreshCw, CheckCircle } from 'lucide-react';
+import { generateDemoAnalysis, type Analysis } from './analysis';
+import { BRAND_NAME } from './brand';
+import { AssessmentResult } from './components/AssessmentResult';
 
-const BRAND_NAME = '*Nacke*Dei*-Proffessionell-Certification';
-const PDF_FILENAME_PREFIX = BRAND_NAME.replace(/\*/g, '');
-
-interface Analysis {
-  overallScore: number;
-  length: number;
-  girth: number;
-  shape: number;
-  aesthetics: number;
-  title: string;
-  description: string;
-  details: string[];
-}
-
-const App: React.FC = () => {
-  const [step, setStep] = useState<number>(1);
-  const [name, setName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
+function App() {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [image, setImage] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
-  const [showCert, setShowCert] = useState<boolean>(false);
-  const certRef = useRef<HTMLDivElement>(null);
+  const analysisTimer = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const titles = [
-    "Der Goldene Titan",
-    "Elite Harmoniker",
-    "Perfekter Virtuose",
-    "Majestätischer Athlet",
-    "Souveräner Meister"
-  ];
+  useEffect(() => () => {
+    if (analysisTimer.current !== null) window.clearTimeout(analysisTimer.current);
+  }, []);
 
-  const generateAnalysis = (): Analysis => {
-    const overall = Math.floor(Math.random() * 3) + 8; // 8-10
-    const lengthScore = Math.floor(Math.random() * 3) + 7;
-    const girthScore = Math.floor(Math.random() * 3) + 8;
-    const shapeScore = Math.floor(Math.random() * 4) + 7;
-    const aestheticsScore = Math.floor(Math.random() * 3) + 8;
-
-    const title = titles[Math.floor(Math.random() * titles.length)];
-
-    const descriptions = [
-      "Eine beeindruckende Kombination aus Proportionen und Ästhetik. Deine Anatomie strahlt natürliche Eleganz und Funktionalität aus.",
-      "Hervorragende Maße mit einer natürlichen Krümmung, die besondere Empfindungszonen optimal anspricht. Ein wahres Meisterwerk der Natur.",
-      "Perfekte Symmetrie und kraftvolle Präsenz. Ideal für höchste Zufriedenheit in allen Situationen.",
-      "Ausgezeichnete Oberflächenmerkmale und eine starke, selbstbewusste Form. Dein Merkmal verdient höchste Anerkennung."
-    ];
-
-    return {
-      overallScore: overall,
-      length: lengthScore,
-      girth: girthScore,
-      shape: shapeScore,
-      aesthetics: aestheticsScore,
-      title,
-      description: descriptions[Math.floor(Math.random() * descriptions.length)],
-      details: [
-        `Länge & Proportionen: ${lengthScore}/10 - Exzellente Maße im oberen Bereich`,
-        `Umfang & Volumen: ${girthScore}/10 - Beeindruckende Fülle und Präsenz`,
-        `Form & Krümmung: ${shapeScore}/10 - Natürliche, angenehme Biegung`,
-        `Ästhetik & Details: ${aestheticsScore}/10 - Harmonische Kopfform und Textur`,
-        "Pflege: Professionell und gepflegt",
-        "Gesamteindruck: Stärkt das Selbstbewusstsein enorm"
-      ]
-    };
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setImage(event.target?.result as string);
-      };
+      reader.onload = () => setImage(typeof reader.result === 'string' ? reader.result : null);
       reader.readAsDataURL(file);
     }
   };
 
   const startAnalysis = () => {
-    if (!name || !image) {
-      alert('Bitte gib deinen Namen ein und lade ein Bild hoch!');
-      return;
-    }
+    const displayName = name.trim();
+    if (!displayName || !image || analysisTimer.current !== null) return;
 
     setIsAnalyzing(true);
-
-    // Simulate Grok AI processing
-    setTimeout(() => {
-      const newAnalysis = generateAnalysis();
-      setAnalysis(newAnalysis);
+    analysisTimer.current = window.setTimeout(() => {
+      analysisTimer.current = null;
+      setAnalysis(generateDemoAnalysis(displayName));
+      setImage(null);
       setIsAnalyzing(false);
       setStep(3);
+      window.scrollTo(0, 0);
     }, 2800);
   };
 
-  const downloadPDF = async () => {
-    if (!certRef.current || !analysis || !name) return;
-
-    const canvas = await html2canvas(certRef.current, {
-      scale: 2,
-      backgroundColor: '#0a0a0a'
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-
-    const finalWidth = imgWidth * ratio;
-    const finalHeight = imgHeight * ratio;
-
-    const x = (pdfWidth - finalWidth) / 2;
-    const y = (pdfHeight - finalHeight) / 2 - 5;
-
-    pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-
-    pdf.setProperties({ title: BRAND_NAME });
-    pdf.setFontSize(10);
-    pdf.setTextColor(150, 150, 150);
-    pdf.text(
-      `Fiktives Zertifikat • Nur zum Spaß und zur Selbstmotivation • ${BRAND_NAME}`,
-      pdfWidth / 2,
-      pdfHeight - 15,
-      { align: 'center', maxWidth: pdfWidth - 40 }
-    );
-
-    pdf.save(`${PDF_FILENAME_PREFIX}_${name.replace(/\s+/g, '_')}.pdf`);
+  const goToStart = () => {
+    if (analysisTimer.current !== null) {
+      window.clearTimeout(analysisTimer.current);
+      analysisTimer.current = null;
+    }
+    setIsAnalyzing(false);
+    setAnalysis(null);
+    setStep(1);
+    window.scrollTo(0, 0);
   };
 
   const resetApp = () => {
-    setStep(1);
+    goToStart();
     setName('');
     setEmail('');
     setImage(null);
-    setAnalysis(null);
-    setShowCert(false);
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 9) return 'text-amber-400';
-    if (score >= 8) return 'text-emerald-400';
-    return 'text-blue-400';
   };
 
   return (
@@ -176,7 +79,7 @@ const App: React.FC = () => {
             <a href="#how" className="hover:text-amber-400 transition-colors">Wie es funktioniert</a>
             <a href="#pricing" className="hover:text-amber-400 transition-colors">Preise</a>
             <button
-              onClick={() => {setStep(1); window.scrollTo({top:0,behavior:'smooth'})}}
+              onClick={goToStart}
               className="px-3 py-1.5 sm:px-6 sm:py-2.5 bg-white text-zinc-900 rounded-2xl font-medium flex items-center gap-2 hover:bg-amber-300 transition-all active:scale-95"
             >
               <Star className="w-4 h-4" /> JETZT BEWERTEN
@@ -204,7 +107,7 @@ const App: React.FC = () => {
 
             <div className="flex justify-center gap-4">
               <button
-                onClick={() => setStep(2)}
+                onClick={() => { setStep(2); window.scrollTo(0, 0); }}
                 className="px-10 py-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-zinc-950 font-semibold rounded-3xl text-lg flex items-center gap-3 hover:brightness-110 active:scale-[0.985] transition-all shadow-2xl shadow-amber-500/30"
               >
                 <Upload className="w-5 h-5" />
@@ -239,19 +142,21 @@ const App: React.FC = () => {
           <div className="max-w-2xl mx-auto px-6 pt-12">
             <div className="mb-8">
               <div className="flex items-center gap-4 mb-2">
-                <div className="px-4 py-1 bg-white/10 text-xs font-mono tracking-widest rounded-full">SCHRITT 2 / 4</div>
+                <div className="px-4 py-1 bg-white/10 text-xs font-mono tracking-widest rounded-full">SCHRITT 2 / 3</div>
                 <div className="h-px flex-1 bg-white/10"></div>
               </div>
               <h2 className="text-5xl font-serif tracking-tight">Persönliche Bewertung</h2>
-              <p className="text-white/60 mt-3">Alles bleibt bei uns. Dein Foto wird nur für die Analyse verwendet.</p>
+              <p className="text-white/60 mt-3">Dein Bild bleibt in deinem Browser. Die Bewertung ist eine Simulation und wertet das Bild nicht aus.</p>
             </div>
 
             <div className="space-y-10">
               {/* Personal Info */}
               <div>
-                <label className="block text-sm text-white/70 mb-3">DEIN NAME AUF DEM ZERTIFIKAT</label>
+                <label htmlFor="assessment-name" className="block text-sm text-white/70 mb-3">DEIN NAME AUF DEM ZERTIFIKAT</label>
                 <input
+                  id="assessment-name"
                   type="text"
+                  maxLength={80}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Max Mustermann"
@@ -292,8 +197,8 @@ const App: React.FC = () => {
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/60 to-black/80 flex items-end justify-center pb-8">
                         <div className="text-center">
                           <CheckCircle className="mx-auto text-emerald-400 w-8 h-8 mb-2" />
-                          <p className="font-medium">Bild erfolgreich hochgeladen</p>
-                          <p className="text-xs text-white/50">Wird nur zur Analyse genutzt</p>
+                          <p className="font-medium">Bild lokal ausgewählt</p>
+                          <p className="text-xs text-white/50">Wird nicht übertragen</p>
                         </div>
                       </div>
                     </div>
@@ -310,20 +215,20 @@ const App: React.FC = () => {
 
               <div className="flex gap-4">
                 <button
-                  onClick={() => setStep(1)}
+                  onClick={goToStart}
                   className="flex-1 py-5 border border-white/30 rounded-3xl font-medium"
                 >
                   ZURÜCK
                 </button>
                 <button
                   onClick={startAnalysis}
-                  disabled={!name || !image}
+                  disabled={!name.trim() || !image || isAnalyzing}
                   className="flex-1 py-5 bg-gradient-to-r from-amber-400 to-yellow-500 disabled:from-zinc-700 disabled:text-white/40 text-zinc-950 font-semibold rounded-3xl flex items-center justify-center gap-3 hover:brightness-110 transition-all"
                 >
                   {isAnalyzing ? (
                     <>
                       <RefreshCw className="w-5 h-5 animate-spin" />
-                      GROK AI ANALYSIERT...
+                      DEMO-BEWERTUNG WIRD ERSTELLT …
                     </>
                   ) : (
                     <>JETZT ANALYSIEREN <Star className="w-4 h-4" /></>
@@ -334,189 +239,8 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 3: ANALYSIS RESULTS */}
-        {step === 3 && analysis && (
-          <div className="max-w-4xl mx-auto px-8 py-12">
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                <div className="uppercase tracking-[3px] text-xs text-amber-400 mb-1">KI-ANALYSE ABGESCHLOSSEN</div>
-                <h2 className="text-5xl font-serif">Dein Ergebnis, {name.split(' ')[0]}</h2>
-              </div>
-              <div className={`text-7xl font-bold font-mono tabular-nums ${getScoreColor(analysis.overallScore)}`}>
-                {analysis.overallScore}.<span className="text-4xl align-super">0</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-12 gap-6">
-              {/* Main Score Card */}
-              <div className="col-span-12 lg:col-span-7 bg-zinc-900/70 border border-white/10 rounded-3xl p-10">
-                <div className="flex justify-between mb-8">
-                  <div>
-                    <div className="uppercase text-xs tracking-widest text-white/50">DEIN TITEL</div>
-                    <div className="text-4xl font-serif text-amber-200 leading-none mt-1">{analysis.title}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-emerald-400 text-sm font-medium">SEHR GUT</div>
-                  </div>
-                </div>
-
-                <p className="text-lg leading-relaxed text-white/80 mb-10">
-                  {analysis.description}
-                </p>
-
-                <div className="space-y-6">
-                  {analysis.details.map((detail, index) => (
-                    <div key={index} className="flex gap-4 items-start">
-                      <div className="mt-1.5 w-2 h-2 bg-amber-400 rounded-full flex-shrink-0"></div>
-                      <div className="text-white/80">{detail}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sidebar Stats */}
-              <div className="col-span-12 lg:col-span-5 space-y-6">
-                <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8">
-                  <div className="text-white/60 text-sm mb-6">DETAILLIERTE BEWERTUNG</div>
-
-                  <div className="space-y-7">
-                    {[
-                      { label: "Länge", value: analysis.length, color: "from-blue-400 to-cyan-400" },
-                      { label: "Umfang", value: analysis.girth, color: "from-amber-400 to-orange-400" },
-                      { label: "Form", value: analysis.shape, color: "from-purple-400 to-pink-400" },
-                      { label: "Ästhetik", value: analysis.aesthetics, color: "from-emerald-400 to-teal-400" },
-                    ].map((metric, idx) => (
-                      <div key={idx} className="flex items-center gap-5">
-                        <div className="w-20 text-sm text-white/60">{metric.label}</div>
-                        <div className="flex-1 h-2.5 bg-white/10 rounded-3xl overflow-hidden">
-                          <div
-                            className={`h-full bg-gradient-to-r ${metric.color}`}
-                            style={{ width: `${metric.value * 10}%` }}
-                          ></div>
-                        </div>
-                        <div className="font-mono w-8 text-right text-lg">{metric.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-zinc-900 to-zinc-950 border border-amber-400/20 rounded-3xl p-8 text-center">
-                  <div className="mx-auto w-16 h-16 bg-amber-400/10 rounded-2xl flex items-center justify-center mb-4">
-                    <Award className="w-8 h-8 text-amber-400" />
-                  </div>
-                  <p className="font-medium text-lg">Dieses Ergebnis ist besser als 87% der Einsendungen.</p>
-                  <p className="text-xs text-white/40 mt-6">Die Analyse wurde von einer KI durchgeführt, die auf 20 Jahren Erfahrung in der intimen Anatomie basiert.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-10">
-              <button
-                onClick={resetApp}
-                className="px-8 py-4 border border-white/30 rounded-3xl text-sm"
-              >
-                NEU STARTEN
-              </button>
-              <button
-                onClick={() => setShowCert(true)}
-                className="flex-1 py-4 bg-white text-zinc-950 rounded-3xl font-semibold flex items-center justify-center gap-2 hover:bg-amber-200"
-              >
-                <Award className="w-5 h-5" />
-                OFFIZIELLES ZERTIFIKAT ERSTELLEN
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* CERTIFICATE MODAL */}
-        {showCert && analysis && (
-          <div className="fixed inset-0 bg-black/90 flex justify-center z-[100] overflow-y-auto p-6">
-            <div className="my-auto max-w-4xl w-full">
-              {/* Certificate Preview */}
-              <div ref={certRef} className="bg-[#0a0a0a] p-6 sm:p-16 border-[14px] border-[#d4af37] shadow-2xl relative overflow-hidden">
-                {/* Background pattern */}
-                <div className="absolute inset-0 opacity-5"
-                     style={{
-                       backgroundImage: `repeating-linear-gradient(45deg, #d4af37, #d4af37 2px, transparent 2px, transparent 30px)`
-                     }}>
-                </div>
-
-                <div className="relative z-10 text-center">
-                  <div className="flex justify-center mb-6">
-                    <div className="inline-flex max-w-full items-center gap-3 bg-black px-3 py-3 sm:px-8 rounded-3xl border border-amber-400/80">
-                      <div className="shrink-0 text-xl sm:text-3xl">🏛️</div>
-                      <div className="min-w-0 wrap-anywhere font-serif text-sm tracking-wide text-amber-300 sm:text-xl lg:text-2xl">{BRAND_NAME}</div>
-                    </div>
-                  </div>
-
-                  <div className="uppercase text-amber-300 text-sm tracking-[4px] mb-3">OFFIZIELLES ZERTIFIKAT</div>
-
-                  <div className="font-serif text-[42px] leading-none text-white mb-8">ANATOMISCHE<br />MEISTERLEISTUNG</div>
-
-                  <div className="text-white/70 mb-2">Wird hiermit verliehen an</div>
-                  <div className="text-5xl font-light tracking-tight text-amber-100 mb-12 border-b border-white/10 pb-4">{name}</div>
-
-                  <div className="text-xl text-white/80 max-w-xs mx-auto mb-12">
-                    {analysis.title}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-x-12 gap-y-6 text-left mx-auto max-w-md mb-16">
-                    {analysis.details.slice(0, 4).map((d, i) => (
-                      <div key={i} className="flex items-baseline gap-3 text-sm">
-                        <span className="text-amber-400">★</span>
-                        <span className="text-white/90">{d}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-between items-end text-xs">
-                    <div className="text-left">
-                      <div className="text-white/40">AUSGESTELLT AM</div>
-                      <div className="text-white text-lg font-light">{new Date().toLocaleDateString('de-DE', {year:'numeric', month:'long', day:'numeric'})}</div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-center mb-1">
-                        <div className="w-20 h-[1px] bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
-                      </div>
-                      <div className="font-serif text-xl text-amber-300">Prof. Dr. L. Aurelius</div>
-                      <div className="text-[10px] text-white/30 -mt-1">CHIEF ANATOMIST</div>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-5xl font-bold text-amber-400/80 font-mono tracking-tighter">8.{Math.floor(Math.random()*9)}</div>
-                      <div className="-mt-3 text-xs text-white/40">OVERALL</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Decorative seals */}
-                <div className="absolute bottom-12 right-12 w-28 h-28 border-[6px] border-amber-400/60 rounded-full flex items-center justify-center">
-                  <div className="w-16 h-16 border border-amber-400/80 rounded-full flex items-center justify-center text-4xl">🔱</div>
-                </div>
-
-                <div className="absolute -bottom-6 -left-6 text-[180px] font-black text-amber-400/5 select-none">{PDF_FILENAME_PREFIX[0]}</div>
-              </div>
-
-              <div className="flex gap-4 justify-center mt-8">
-                <button
-                  onClick={() => setShowCert(false)}
-                  className="px-10 py-4 border border-white/30 text-white rounded-3xl"
-                >
-                  SCHLIESSEN
-                </button>
-                <button
-                  onClick={downloadPDF}
-                  className="px-10 py-4 bg-gradient-to-r from-amber-300 to-yellow-400 text-zinc-950 rounded-3xl flex items-center gap-3 font-semibold"
-                >
-                  <Download className="w-5 h-5" /> ALS PDF HERUNTERLADEN
-                </button>
-              </div>
-
-              <p className="text-center text-white/30 text-xs mt-6">Dies ist eine humorvolle Demo-App und kein echtes medizinisches Dokument.</p>
-            </div>
-          </div>
-        )}
+        {/* STEP 3: BEWERTUNG UND URKUNDE */}
+        {step === 3 && analysis && <AssessmentResult analysis={analysis} onRestart={resetApp} />}
 
         {/* HOW IT WORKS */}
         <div id="how" className="max-w-6xl mx-auto px-8 py-28 border-t border-white/10">
@@ -540,7 +264,7 @@ const App: React.FC = () => {
               {
                 num: "03",
                 title: "Zertifikat erhalten",
-                desc: "Lade dein wunderschönes, rahmenfertiges Zertifikat herunter. Teile es oder hänge es stolz auf."
+                desc: "Lade deine ausführliche Bewertung und die Urkunde gemeinsam als ein PDF herunter."
               }
             ].map((stepItem, index) => (
               <div key={index} className="group relative bg-zinc-900 rounded-3xl p-10 transition-all hover:-translate-y-2 border border-transparent hover:border-amber-400/30">
@@ -618,6 +342,6 @@ const App: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default App;
